@@ -1,8 +1,6 @@
-import 'dart:ffi';
 import 'dart:math';
 
 import 'package:app_music/data/model/song.dart';
-import 'package:app_music/ui/home/viewmodel.dart';
 import 'package:audio_video_progress_bar/audio_video_progress_bar.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -12,7 +10,7 @@ import 'package:percent_indicator/circular_percent_indicator.dart';
 import 'audio_player_manager.dart';
 
 class NowPlaying extends StatelessWidget {
-  NowPlaying(
+  const NowPlaying(
       {super.key,
       required this.playingSong,
       required this.songs,
@@ -20,7 +18,7 @@ class NowPlaying extends StatelessWidget {
 
   final Song playingSong;
   final List<Song> songs;
-  List<AudioPlayerManager> audioPlayerManagers;
+  final List<AudioPlayerManager> audioPlayerManagers;
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +30,7 @@ class NowPlaying extends StatelessWidget {
 }
 
 class NowPlayingPage extends StatefulWidget {
-  NowPlayingPage(
+  const NowPlayingPage(
       {super.key,
       required this.playingSong,
       required this.songs,
@@ -40,7 +38,7 @@ class NowPlayingPage extends StatefulWidget {
 
   final Song playingSong;
   final List<Song> songs;
-  List<AudioPlayerManager> audioPlayerManagers;
+  final List<AudioPlayerManager> audioPlayerManagers;
 
   @override
   State<NowPlayingPage> createState() => _NowPlayingPageState();
@@ -51,17 +49,16 @@ class _NowPlayingPageState extends State<NowPlayingPage>
   late AudioPlayerManager _audioPlayerManager;
   late int _selectedItemIndex;
   late Song _song;
-  late double _currentAnimationPosition;
   bool isPlay = false;
   bool _isRepeat = false;
   bool _isShuffle = false;
   bool test = true;
+  int selected = 2;
 
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
-    _currentAnimationPosition = 0.0;
     _song = widget.playingSong;
     _audioPlayerManager = AudioPlayerManager(songUrl: _song.source);
     _audioPlayerManager.init();
@@ -83,9 +80,6 @@ class _NowPlayingPageState extends State<NowPlayingPage>
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    const delta = 64;
-    final radius = (screenWidth - delta) / 2;
 
     return CupertinoPageScaffold(
         navigationBar: CupertinoNavigationBar(
@@ -114,19 +108,14 @@ class _NowPlayingPageState extends State<NowPlayingPage>
                 const SizedBox(
                   height: 32,
                 ),
-                circularProgress()
-                ,
+                circularProgress(),
                 Padding(
                   padding: const EdgeInsets.only(top: 54, bottom: 16),
                   child: SizedBox(
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
-                        IconButton(
-                          onPressed: () {},
-                          icon: const Icon(Icons.share_outlined),
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
+                        popupMenu(),
                         Column(
                           children: [
                             Text(_song.title,
@@ -297,15 +286,15 @@ class _NowPlayingPageState extends State<NowPlayingPage>
             );
           } else if (playing != true &&
               processingState == ProcessingState.ready) {
-            // if (isPlay == false) {
-            //     // if (widget.audioPlayerManagers.length > 1) {
-            //     //   var prevSong = widget.audioPlayerManagers.removeAt(0);
-            //     //   prevSong.dispose();
-            //     // }
-            //
-            //   _audioPlayerManager.player.play();
-            //   isPlay = true;
-            // }
+            if (isPlay == false) {
+              //     // if (widget.audioPlayerManagers.length > 1) {
+              //     //   var prevSong = widget.audioPlayerManagers.removeAt(0);
+              //     //   prevSong.dispose();
+              //     // }
+              //
+              _audioPlayerManager.player.play();
+              isPlay = true;
+            }
             return MediaButtonControl(
                 function: () {
                   _audioPlayerManager.player.play();
@@ -335,38 +324,90 @@ class _NowPlayingPageState extends State<NowPlayingPage>
   }
 
   circularProgress() {
-    return StreamBuilder(stream: _audioPlayerManager.durationState2, builder: ((context,snapshot){
-      final screenWidth = MediaQuery.of(context).size.width;
-      const delta = 64;
-      final radius = (screenWidth - delta) / 2;
-      final percentState = snapshot.data;
-      var positionPercent = percentState?.progress.inSeconds.toDouble();
-      var total = _audioPlayerManager.player.duration?.inSeconds.toDouble();
-      total ??=0.000000000000000001;
-      positionPercent ??= 0.0;
-      final position = positionPercent/total;
-      return CircularPercentIndicator(radius: radius+10,
-        animation: true,
-        animateFromLastPercent: true,
-        progressColor: Colors.purple,
-        percent: position,
-        center: ClipRRect(
-          borderRadius: BorderRadius.circular(radius),
-          child: FadeInImage.assetNetwork(
-            placeholder: 'assets/itune.jpg',
-            image: _song.image,
-            width: screenWidth - delta,
-            height: screenWidth - delta,
-            imageErrorBuilder: (context, error, stackTrace) {
-              return Image.asset(
-                'assets/itune.jpg',
-                width: screenWidth - delta,
-                height: screenWidth - delta,
-              );
-            },
-          ),
-        ));
-    }));
+    return StreamBuilder(
+        stream: _audioPlayerManager.durationState2,
+        builder: ((context, snapshot) {
+          final screenWidth = MediaQuery.of(context).size.width;
+          const delta = 64;
+          final radius = (screenWidth - delta) / 2;
+          final percentState = snapshot.data;
+          var positionPercent = percentState?.progress.inSeconds.toDouble();
+          var total = _audioPlayerManager.player.duration?.inSeconds.toDouble();
+          total ??= 0.000000000000000001;
+          positionPercent ??= 0.0;
+          final position = positionPercent / total;
+          return CircularPercentIndicator(
+              radius: radius + 10,
+              animation: true,
+              animateFromLastPercent: true,
+              progressColor: Colors.purple,
+              percent: position,
+              center: ClipRRect(
+                borderRadius: BorderRadius.circular(radius),
+                child: FadeInImage.assetNetwork(
+                  placeholder: 'assets/itune.jpg',
+                  image: _song.image,
+                  width: screenWidth - delta,
+                  height: screenWidth - delta,
+                  imageErrorBuilder: (context, error, stackTrace) {
+                    return Image.asset(
+                      'assets/itune.jpg',
+                      width: screenWidth - delta,
+                      height: screenWidth - delta,
+                    );
+                  },
+                ),
+              ));
+        }));
+  }
+
+  Widget popupMenu() {
+    return PopupMenuButton(initialValue: selected,onSelected: (item)=>setState(() {
+      selected=item;
+    }),
+      itemBuilder: (context) => [
+        PopupMenuItem(
+          onTap: () {
+            _audioPlayerManager.player.setSpeed(0.5);
+          },
+          value: 0,
+          child: const Row(mainAxisAlignment: MainAxisAlignment.spaceBetween,children: [Text('x0.5'),],),
+        ),
+        PopupMenuItem(
+          onTap: () {
+            _audioPlayerManager.player.setSpeed(0.75);
+          },
+          value: 1,
+          child: const Text('x0.75'),
+        ),
+        PopupMenuItem(
+          onTap: () {
+            _audioPlayerManager.player.setSpeed(1);
+          },
+          value: 2,
+          child: const Text('x1.0'),
+        ),
+        PopupMenuItem(
+          onTap: () {
+            _audioPlayerManager.player.setSpeed(1.25);
+          },
+          value: 3,
+          child: const Text('x1.25'),
+        ),
+        PopupMenuItem(
+          onTap: () {
+            _audioPlayerManager.player.setSpeed(1.5);
+          },
+          value: 4,
+          child: const Text('x1.5'),
+        ),
+      ],
+      icon: Icon(
+        Icons.speed,
+        color: Theme.of(context).colorScheme.primary,
+      ),
+      offset: const Offset(50, -170),
+    );
   }
 
 
