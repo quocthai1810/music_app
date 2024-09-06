@@ -11,6 +11,5 @@ void main()async {
   boxFavorSong = await Hive.openBox<FavorSong>('favorSongBox');
   Hive.registerAdapter(SongsAdapter());
   boxSongs = await Hive.openBox<Songs>('songsBox');
-  print(boxSongs.length);
   runApp(const MusicApp());
 }

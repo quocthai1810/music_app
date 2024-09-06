@@ -1,4 +1,5 @@
-import 'package:app_music/ui/discovery/discovery.dart';
+
+import 'package:app_music/ui/favorite_songs/favorite_songs.dart';
 import 'package:app_music/ui/home/viewmodel.dart';
 import 'package:app_music/ui/now_playing/audio_player_manager.dart';
 import 'package:app_music/ui/settings/settings.dart';
@@ -37,7 +38,7 @@ class MusicHomePage extends StatefulWidget {
 class _MusicHomePageState extends State<MusicHomePage> {
   final List<Widget> _tabs = [
     const HomeTab(),
-    const DiscoveryTab(),
+    const FavorTab(),
     const AccountTab(),
     const SettingsTab()
   ];
@@ -54,7 +55,7 @@ class _MusicHomePageState extends State<MusicHomePage> {
               items: [
                 BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
                 BottomNavigationBarItem(
-                    icon: Icon(Icons.album), label: 'Discovery'),
+                    icon: Icon(Icons.favorite), label: 'Favorite'),
                 BottomNavigationBarItem(
                     icon: Icon(Icons.person), label: 'Account'),
                 BottomNavigationBarItem(

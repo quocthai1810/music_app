@@ -136,7 +136,7 @@ class _NowPlayingPageState extends State<NowPlayingPage>
                         ),
                         IconButton(
                           onPressed: () {
-                            // isFavorSong();
+                            isFavorSong();
                           },
                           icon: _song.favor
                               ? Icon(Icons.favorite)
@@ -425,29 +425,41 @@ class _NowPlayingPageState extends State<NowPlayingPage>
     );
   }
 
-  // void isFavorSong() async {
-  //   setState(() {
-  //     _song.favor = !_song.favor;
-  //   });
-  //   if (!boxFavorSong.containsKey(_song.id)) {
-  //     await boxFavorSong.put(
-  //         _song.id,
-  //         FavorSong(
-  //             id: _song.id,
-  //             title: _song.title,
-  //             album: _song.album,
-  //             artist: _song.artist,
-  //             source: _song.source,
-  //             image: _song.image,
-  //             duration: _song.duration,
-  //             favor: _song.favor));
-  //     print('đã thêm');
-  //   } else {
-  //     await boxFavorSong.delete(_song.id);
-  //     print('đã xóa');
-  //   }
-  //   print(boxFavorSong.keys);
-  // }
+  void isFavorSong() async {
+    setState(() {
+      _song.favor = !_song.favor;
+    });
+    if (_song.favor) {
+      await boxFavorSong.put(
+          _song.id,
+          FavorSong(
+              id: _song.id,
+              title: _song.title,
+              album: _song.album,
+              artist: _song.artist,
+              source: _song.source,
+              image: _song.image,
+              duration: _song.duration,
+              favor: _song.favor));
+      // await boxSongs.putAt(
+      //     widget.songs.indexOf(_song),
+      //     FavorSong(
+      //         id: _song.id,
+      //         title: _song.title,
+      //         album: _song.album,
+      //         artist: _song.artist,
+      //         source: _song.source,
+      //         image: _song.image,
+      //         duration: _song.duration,
+      //         favor: _song.favor));
+
+      print('đã thêm');
+    } else {
+      await boxFavorSong.delete(_song.id);
+      print('đã xóa');
+    }
+    boxFavorSong.deleteAll(boxFavorSong.keys);
+  }
 }
 
 class MediaButtonControl extends StatefulWidget {
