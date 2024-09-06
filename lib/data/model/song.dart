@@ -17,6 +17,7 @@ class Song {
   String source;
   String image;
   int duration;
+  bool favor;
 
   Song(
       {required this.id,
@@ -25,7 +26,8 @@ class Song {
       required this.artist,
       required this.source,
       required this.image,
-      required this.duration});
+      required this.duration,
+      required this.favor});
 
   factory Song.fromJson(Map<String, dynamic> map) {
     return Song(
@@ -35,7 +37,8 @@ class Song {
         artist: map['artist'],
         source: map['source'],
         image: map['image'],
-        duration: map['duration']);
+        duration: map['duration'],
+        favor: bool.parse(map['favorite']));
   }
 
   @override

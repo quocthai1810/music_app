@@ -1,6 +1,8 @@
 import 'dart:math';
 
+import 'package:app_music/boxes.dart';
 import 'package:app_music/data/model/song.dart';
+import 'package:app_music/favor_song.dart';
 import 'package:audio_video_progress_bar/audio_video_progress_bar.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -80,7 +82,6 @@ class _NowPlayingPageState extends State<NowPlayingPage>
 
   @override
   Widget build(BuildContext context) {
-
     return CupertinoPageScaffold(
         navigationBar: CupertinoNavigationBar(
           middle: const Text('Now Playing'),
@@ -133,9 +134,14 @@ class _NowPlayingPageState extends State<NowPlayingPage>
                           ],
                         ),
                         IconButton(
-                          onPressed: () {},
-                          icon: const Icon(Icons.favorite_outline),
+                          onPressed: () {
+                            isFavorSong();
+                          },
+                          icon: _song.favor
+                              ? Icon(Icons.favorite)
+                              : Icon(Icons.favorite_border),
                           color: Theme.of(context).colorScheme.primary,
+                          iconSize: 40,
                         )
                       ],
                     ),
@@ -362,16 +368,23 @@ class _NowPlayingPageState extends State<NowPlayingPage>
   }
 
   Widget popupMenu() {
-    return PopupMenuButton(initialValue: selected,onSelected: (item)=>setState(() {
-      selected=item;
-    }),
+    return PopupMenuButton(
+      initialValue: selected,
+      onSelected: (item) => setState(() {
+        selected = item;
+      }),
       itemBuilder: (context) => [
         PopupMenuItem(
           onTap: () {
             _audioPlayerManager.player.setSpeed(0.5);
           },
           value: 0,
-          child: const Row(mainAxisAlignment: MainAxisAlignment.spaceBetween,children: [Text('x0.5'),],),
+          child: const Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('x0.5'),
+            ],
+          ),
         ),
         PopupMenuItem(
           onTap: () {
@@ -405,12 +418,37 @@ class _NowPlayingPageState extends State<NowPlayingPage>
       icon: Icon(
         Icons.speed,
         color: Theme.of(context).colorScheme.primary,
+        size: 30,
       ),
       offset: const Offset(50, -170),
     );
   }
 
-
+  void isFavorSong() async {
+    setState(() {
+      _song.favor = !_song.favor;
+    });
+    if (_song.favor) {
+      await boxFavorSong.put(
+          _song.id,
+          FavorSong(
+              id: _song.id,
+              title: _song.title,
+              album: _song.album,
+              artist: _song.artist,
+              source: _song.source,
+              image: _song.image,
+              duration: _song.duration,
+              favor: _song.favor));
+      print('đã thêm');
+    } else {
+      await boxFavorSong.delete(_song.id);
+      print('đã xóa');
+    }
+    boxFavorSong.deleteAll(boxFavorSong.keys);
+    print('xóa tất ');
+    print(boxFavorSong.get(_song.id));
+  }
 }
 
 class MediaButtonControl extends StatefulWidget {
