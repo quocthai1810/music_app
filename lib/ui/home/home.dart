@@ -2,6 +2,7 @@ import 'package:app_music/ui/discovery/discovery.dart';
 import 'package:app_music/ui/home/viewmodel.dart';
 import 'package:app_music/ui/now_playing/audio_player_manager.dart';
 import 'package:app_music/ui/settings/settings.dart';
+import 'package:app_music/ui/songs.dart';
 import 'package:app_music/ui/user/user.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -83,7 +84,7 @@ class HomeTabPage extends StatefulWidget {
 }
 
 class _HomeTabPageState extends State<HomeTabPage> {
-  List<Song> songs = [];
+  List<Songs> songs = [];
   late MusicAppViewModel _viewModel;
   List<AudioPlayerManager> audioPlayerManagers = [];
 
@@ -187,7 +188,7 @@ class _HomeTabPageState extends State<HomeTabPage> {
   }
 
   //hàm điều hướng từng bài để qua trang nghe nhạc
-  void navigate(Song song) {
+  void navigate(Songs song) {
     Navigator.push(context, CupertinoPageRoute(builder: (context) {
       return NowPlaying(
         songs: songs,
@@ -206,7 +207,7 @@ class _SongItemSection extends StatelessWidget {
   });
 
   final _HomeTabPageState parent;
-  final Song song;
+  final Songs song;
 
   @override
   Widget build(BuildContext context) {

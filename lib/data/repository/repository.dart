@@ -1,24 +1,25 @@
+import '../../ui/songs.dart';
 import '../model/song.dart';
 import '../source/source.dart';
 
 abstract interface class Repository {
-  Future<List<Song>?> loadData();
+  Future<List<Songs>?> loadData();
 }
 
 class DefaultRepository implements Repository {
   final _localDataSource = LocalDataSource();
-  final _remoteDataSource = RemoteDataSource();
+  // final _remoteDataSource = RemoteDataSource();
 
   @override
-  Future<List<Song>?> loadData() async {
-    List<Song> songs = [];
+  Future<List<Songs>?> loadData() async {
+    List<Songs> songs = [];
     bool isRemoteSongs = false;
-    await _remoteDataSource.loadData().then((remoteSongs) {
-      if (remoteSongs != null) {
-        isRemoteSongs = true;
-        songs.addAll(remoteSongs);
-      }
-    });
+    // await _remoteDataSource.loadData().then((remoteSongs) {
+    //   if (remoteSongs != null) {
+    //     isRemoteSongs = true;
+    //     songs.addAll(remoteSongs);
+    //   }
+    // });
     if (isRemoteSongs == false) {
       await _localDataSource.loadData().then((localSongs) {
         if (localSongs != null) {

@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
 
+import '../songs.dart';
 import 'audio_player_manager.dart';
 
 class NowPlaying extends StatelessWidget {
@@ -18,8 +19,8 @@ class NowPlaying extends StatelessWidget {
       required this.songs,
       required this.audioPlayerManagers});
 
-  final Song playingSong;
-  final List<Song> songs;
+  final Songs playingSong;
+  final List<Songs> songs;
   final List<AudioPlayerManager> audioPlayerManagers;
 
   @override
@@ -38,8 +39,8 @@ class NowPlayingPage extends StatefulWidget {
       required this.songs,
       required this.audioPlayerManagers});
 
-  final Song playingSong;
-  final List<Song> songs;
+  final Songs playingSong;
+  final List<Songs> songs;
   final List<AudioPlayerManager> audioPlayerManagers;
 
   @override
@@ -50,7 +51,7 @@ class _NowPlayingPageState extends State<NowPlayingPage>
     with SingleTickerProviderStateMixin {
   late AudioPlayerManager _audioPlayerManager;
   late int _selectedItemIndex;
-  late Song _song;
+  late Songs _song;
   bool isPlay = false;
   bool _isRepeat = false;
   bool _isShuffle = false;
@@ -135,7 +136,7 @@ class _NowPlayingPageState extends State<NowPlayingPage>
                         ),
                         IconButton(
                           onPressed: () {
-                            isFavorSong();
+                            // isFavorSong();
                           },
                           icon: _song.favor
                               ? Icon(Icons.favorite)
@@ -424,31 +425,29 @@ class _NowPlayingPageState extends State<NowPlayingPage>
     );
   }
 
-  void isFavorSong() async {
-    setState(() {
-      _song.favor = !_song.favor;
-    });
-    if (_song.favor) {
-      await boxFavorSong.put(
-          _song.id,
-          FavorSong(
-              id: _song.id,
-              title: _song.title,
-              album: _song.album,
-              artist: _song.artist,
-              source: _song.source,
-              image: _song.image,
-              duration: _song.duration,
-              favor: _song.favor));
-      print('đã thêm');
-    } else {
-      await boxFavorSong.delete(_song.id);
-      print('đã xóa');
-    }
-    boxFavorSong.deleteAll(boxFavorSong.keys);
-    print('xóa tất ');
-    print(boxFavorSong.get(_song.id));
-  }
+  // void isFavorSong() async {
+  //   setState(() {
+  //     _song.favor = !_song.favor;
+  //   });
+  //   if (!boxFavorSong.containsKey(_song.id)) {
+  //     await boxFavorSong.put(
+  //         _song.id,
+  //         FavorSong(
+  //             id: _song.id,
+  //             title: _song.title,
+  //             album: _song.album,
+  //             artist: _song.artist,
+  //             source: _song.source,
+  //             image: _song.image,
+  //             duration: _song.duration,
+  //             favor: _song.favor));
+  //     print('đã thêm');
+  //   } else {
+  //     await boxFavorSong.delete(_song.id);
+  //     print('đã xóa');
+  //   }
+  //   print(boxFavorSong.keys);
+  // }
 }
 
 class MediaButtonControl extends StatefulWidget {
