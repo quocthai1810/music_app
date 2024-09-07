@@ -16,10 +16,11 @@ import '../songs.dart';
 import 'audio_player_manager.dart';
 
 class NowPlaying extends StatelessWidget {
-  const NowPlaying({super.key,
-    required this.playingSong,
-    required this.songs,
-    required this.audioPlayerManagers});
+  const NowPlaying(
+      {super.key,
+      required this.playingSong,
+      required this.songs,
+      required this.audioPlayerManagers});
 
   final Songs playingSong;
   final List<Songs> songs;
@@ -35,10 +36,11 @@ class NowPlaying extends StatelessWidget {
 }
 
 class NowPlayingPage extends StatefulWidget {
-  const NowPlayingPage({super.key,
-    required this.playingSong,
-    required this.songs,
-    required this.audioPlayerManagers});
+  const NowPlayingPage(
+      {super.key,
+      required this.playingSong,
+      required this.songs,
+      required this.audioPlayerManagers});
 
   final Songs playingSong;
   final List<Songs> songs;
@@ -58,6 +60,7 @@ class _NowPlayingPageState extends State<NowPlayingPage>
   bool _isShuffle = false;
   bool test = true;
   int selected = 2;
+  late bool favor;
 
   @override
   void initState() {
@@ -74,6 +77,7 @@ class _NowPlayingPageState extends State<NowPlayingPage>
         _nextSong();
       }
     });
+    favor = boxSongs.get(_song.id).favor;
   }
 
   @override
@@ -88,7 +92,7 @@ class _NowPlayingPageState extends State<NowPlayingPage>
         navigationBar: CupertinoNavigationBar(
           middle: const Text('Now Playing'),
           trailing:
-          IconButton(onPressed: () {}, icon: const Icon(Icons.more_horiz)),
+              IconButton(onPressed: () {}, icon: const Icon(Icons.more_horiz)),
         ),
         child: Scaffold(
           body: Center(
@@ -134,33 +138,38 @@ class _NowPlayingPageState extends State<NowPlayingPage>
                               ),
                             )
                           ],
-                        ),ValueListenableBuilder(valueListenable: boxSongs.listenable(), builder: (context,boxSongs,widget){
-                          return IconButton(
-                            onPressed: () {
-                              isFavorSong();
-                              if (_song.favor) {
-                                const snackBar = SnackBar(
-                                  content: Text('Đã thêm vào danh mục Favorite'),
-                                  backgroundColor: Colors.purple,);
-                                ScaffoldMessenger.of(context).showSnackBar(snackBar);
-                              } else {
-                                const snackBar = SnackBar(
-                                  content: Text('Đã xóa khỏi danh mục Favorite'),
-                                  backgroundColor: Colors.purple,);
-                                ScaffoldMessenger.of(context).showSnackBar(snackBar);
-                              }
-                            },
-                            icon: boxSongs.get(_song.id).favor
-                                ? Icon(Icons.favorite)
-                                : Icon(Icons.favorite_border),
-                            color: Theme
-                                .of(context)
-                                .colorScheme
-                                .primary,
-                            iconSize: 40,
-                          );
-                        })
-
+                        ),
+                        ValueListenableBuilder(
+                            valueListenable: boxSongs.listenable(),
+                            builder: (context, boxSongs, widget) {
+                              return IconButton(
+                                onPressed: () {
+                                  isFavorSong();
+                                  if (favor) {
+                                    const snackBar = SnackBar(
+                                      content:
+                                          Text('Đã thêm vào danh mục Favorite'),
+                                      backgroundColor: Colors.purple,
+                                    );
+                                    ScaffoldMessenger.of(context)
+                                        .showSnackBar(snackBar);
+                                  } else {
+                                    const snackBar = SnackBar(
+                                      content:
+                                          Text('Đã xóa khỏi danh mục Favorite'),
+                                      backgroundColor: Colors.purple,
+                                    );
+                                    ScaffoldMessenger.of(context)
+                                        .showSnackBar(snackBar);
+                                  }
+                                },
+                                icon: boxSongs.get(_song.id).favor
+                                    ? Icon(Icons.favorite)
+                                    : Icon(Icons.favorite_border),
+                                color: Theme.of(context).colorScheme.primary,
+                                iconSize: 40,
+                              );
+                            })
                       ],
                     ),
                   ),
@@ -351,10 +360,7 @@ class _NowPlayingPageState extends State<NowPlayingPage>
     return StreamBuilder(
         stream: _audioPlayerManager.durationState2,
         builder: ((context, snapshot) {
-          final screenWidth = MediaQuery
-              .of(context)
-              .size
-              .width;
+          final screenWidth = MediaQuery.of(context).size.width;
           const delta = 64;
           final radius = (screenWidth - delta) / 2;
           final percentState = snapshot.data;
@@ -391,12 +397,10 @@ class _NowPlayingPageState extends State<NowPlayingPage>
   Widget popupMenu() {
     return PopupMenuButton(
       initialValue: selected,
-      onSelected: (item) =>
-          setState(() {
-            selected = item;
-          }),
-      itemBuilder: (context) =>
-      [
+      onSelected: (item) => setState(() {
+        selected = item;
+      }),
+      itemBuilder: (context) => [
         PopupMenuItem(
           onTap: () {
             _audioPlayerManager.player.setSpeed(0.5);
@@ -440,10 +444,7 @@ class _NowPlayingPageState extends State<NowPlayingPage>
       ],
       icon: Icon(
         Icons.speed,
-        color: Theme
-            .of(context)
-            .colorScheme
-            .primary,
+        color: Theme.of(context).colorScheme.primary,
         size: 30,
       ),
       offset: const Offset(50, -170),
@@ -451,10 +452,16 @@ class _NowPlayingPageState extends State<NowPlayingPage>
   }
 
   void isFavorSong() async {
-    setState(() {
-      _song.favor = !_song.favor;
-    });
-    if (_song.favor) {
+    favor = !favor;
+    var index = 0;
+    for (var s in boxSongs.keys) {
+      if (_song.id != s) {
+        index += 1;
+      } else {
+        break;
+      }
+    }
+    if (favor) {
       await boxFavorSong.put(
           _song.id,
           FavorSong(
@@ -465,30 +472,7 @@ class _NowPlayingPageState extends State<NowPlayingPage>
               source: _song.source,
               image: _song.image,
               duration: _song.duration,
-              favor: _song.favor));
-      await boxSongs.putAt(
-          widget.songs.indexOf(_song),
-          Songs(
-              id: _song.id,
-              title: _song.title,
-              album: _song.album,
-              artist: _song.artist,
-              source: _song.source,
-              image: _song.image,
-              duration: _song.duration,
-              favor: _song.favor));
-    } else {
-      await boxFavorSong.delete(_song.id);
-      var index = 0;
-      for (var s in boxSongs.keys){
-        if(_song.id != s){
-          index+=1;
-        }
-        else {
-          break;
-        }
-      }
-      print(index);
+              favor: favor));
       await boxSongs.putAt(
           index,
           Songs(
@@ -499,7 +483,21 @@ class _NowPlayingPageState extends State<NowPlayingPage>
               source: _song.source,
               image: _song.image,
               duration: _song.duration,
-              favor: _song.favor));
+              favor: favor));
+    } else {
+      await boxSongs.putAt(
+          index,
+          Songs(
+              id: _song.id,
+              title: _song.title,
+              album: _song.album,
+              artist: _song.artist,
+              source: _song.source,
+              image: _song.image,
+              duration: _song.duration,
+              favor: favor));
+      await boxFavorSong.delete(_song.id);
+
     }
   }
 }
@@ -531,10 +529,7 @@ class _MediaButtonControlState extends State<MediaButtonControl> {
       onPressed: widget.function,
       icon: Icon(widget.icon),
       iconSize: widget.size,
-      color: widget.color ?? Theme
-          .of(context)
-          .colorScheme
-          .primary,
+      color: widget.color ?? Theme.of(context).colorScheme.primary,
     );
   }
 }
