@@ -37,4 +37,6 @@ class Songs {
   @HiveField(7)
   bool favor;
 
+
+
 }

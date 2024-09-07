@@ -3,9 +3,12 @@ import 'dart:math';
 import 'package:app_music/boxes.dart';
 import 'package:app_music/data/model/song.dart';
 import 'package:app_music/favor_song.dart';
+import 'package:app_music/main.dart';
 import 'package:audio_video_progress_bar/audio_video_progress_bar.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:http/http.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
 
@@ -13,11 +16,10 @@ import '../songs.dart';
 import 'audio_player_manager.dart';
 
 class NowPlaying extends StatelessWidget {
-  const NowPlaying(
-      {super.key,
-      required this.playingSong,
-      required this.songs,
-      required this.audioPlayerManagers});
+  const NowPlaying({super.key,
+    required this.playingSong,
+    required this.songs,
+    required this.audioPlayerManagers});
 
   final Songs playingSong;
   final List<Songs> songs;
@@ -33,11 +35,10 @@ class NowPlaying extends StatelessWidget {
 }
 
 class NowPlayingPage extends StatefulWidget {
-  const NowPlayingPage(
-      {super.key,
-      required this.playingSong,
-      required this.songs,
-      required this.audioPlayerManagers});
+  const NowPlayingPage({super.key,
+    required this.playingSong,
+    required this.songs,
+    required this.audioPlayerManagers});
 
   final Songs playingSong;
   final List<Songs> songs;
@@ -87,7 +88,7 @@ class _NowPlayingPageState extends State<NowPlayingPage>
         navigationBar: CupertinoNavigationBar(
           middle: const Text('Now Playing'),
           trailing:
-              IconButton(onPressed: () {}, icon: const Icon(Icons.more_horiz)),
+          IconButton(onPressed: () {}, icon: const Icon(Icons.more_horiz)),
         ),
         child: Scaffold(
           body: Center(
@@ -133,17 +134,33 @@ class _NowPlayingPageState extends State<NowPlayingPage>
                               ),
                             )
                           ],
-                        ),
-                        IconButton(
-                          onPressed: () {
-                            isFavorSong();
-                          },
-                          icon: _song.favor
-                              ? Icon(Icons.favorite)
-                              : Icon(Icons.favorite_border),
-                          color: Theme.of(context).colorScheme.primary,
-                          iconSize: 40,
-                        )
+                        ),ValueListenableBuilder(valueListenable: boxSongs.listenable(), builder: (context,boxSongs,widget){
+                          return IconButton(
+                            onPressed: () {
+                              isFavorSong();
+                              if (_song.favor) {
+                                const snackBar = SnackBar(
+                                  content: Text('Đã thêm vào danh mục Favorite'),
+                                  backgroundColor: Colors.purple,);
+                                ScaffoldMessenger.of(context).showSnackBar(snackBar);
+                              } else {
+                                const snackBar = SnackBar(
+                                  content: Text('Đã xóa khỏi danh mục Favorite'),
+                                  backgroundColor: Colors.purple,);
+                                ScaffoldMessenger.of(context).showSnackBar(snackBar);
+                              }
+                            },
+                            icon: boxSongs.get(_song.id).favor
+                                ? Icon(Icons.favorite)
+                                : Icon(Icons.favorite_border),
+                            color: Theme
+                                .of(context)
+                                .colorScheme
+                                .primary,
+                            iconSize: 40,
+                          );
+                        })
+
                       ],
                     ),
                   ),
@@ -334,7 +351,10 @@ class _NowPlayingPageState extends State<NowPlayingPage>
     return StreamBuilder(
         stream: _audioPlayerManager.durationState2,
         builder: ((context, snapshot) {
-          final screenWidth = MediaQuery.of(context).size.width;
+          final screenWidth = MediaQuery
+              .of(context)
+              .size
+              .width;
           const delta = 64;
           final radius = (screenWidth - delta) / 2;
           final percentState = snapshot.data;
@@ -371,10 +391,12 @@ class _NowPlayingPageState extends State<NowPlayingPage>
   Widget popupMenu() {
     return PopupMenuButton(
       initialValue: selected,
-      onSelected: (item) => setState(() {
-        selected = item;
-      }),
-      itemBuilder: (context) => [
+      onSelected: (item) =>
+          setState(() {
+            selected = item;
+          }),
+      itemBuilder: (context) =>
+      [
         PopupMenuItem(
           onTap: () {
             _audioPlayerManager.player.setSpeed(0.5);
@@ -418,7 +440,10 @@ class _NowPlayingPageState extends State<NowPlayingPage>
       ],
       icon: Icon(
         Icons.speed,
-        color: Theme.of(context).colorScheme.primary,
+        color: Theme
+            .of(context)
+            .colorScheme
+            .primary,
         size: 30,
       ),
       offset: const Offset(50, -170),
@@ -441,24 +466,41 @@ class _NowPlayingPageState extends State<NowPlayingPage>
               image: _song.image,
               duration: _song.duration,
               favor: _song.favor));
-      // await boxSongs.putAt(
-      //     widget.songs.indexOf(_song),
-      //     FavorSong(
-      //         id: _song.id,
-      //         title: _song.title,
-      //         album: _song.album,
-      //         artist: _song.artist,
-      //         source: _song.source,
-      //         image: _song.image,
-      //         duration: _song.duration,
-      //         favor: _song.favor));
-
-      print('đã thêm');
+      await boxSongs.putAt(
+          widget.songs.indexOf(_song),
+          Songs(
+              id: _song.id,
+              title: _song.title,
+              album: _song.album,
+              artist: _song.artist,
+              source: _song.source,
+              image: _song.image,
+              duration: _song.duration,
+              favor: _song.favor));
     } else {
       await boxFavorSong.delete(_song.id);
-      print('đã xóa');
+      var index = 0;
+      for (var s in boxSongs.keys){
+        if(_song.id != s){
+          index+=1;
+        }
+        else {
+          break;
+        }
+      }
+      print(index);
+      await boxSongs.putAt(
+          index,
+          Songs(
+              id: _song.id,
+              title: _song.title,
+              album: _song.album,
+              artist: _song.artist,
+              source: _song.source,
+              image: _song.image,
+              duration: _song.duration,
+              favor: _song.favor));
     }
-    boxFavorSong.deleteAll(boxFavorSong.keys);
   }
 }
 
@@ -489,7 +531,10 @@ class _MediaButtonControlState extends State<MediaButtonControl> {
       onPressed: widget.function,
       icon: Icon(widget.icon),
       iconSize: widget.size,
-      color: widget.color ?? Theme.of(context).colorScheme.primary,
+      color: widget.color ?? Theme
+          .of(context)
+          .colorScheme
+          .primary,
     );
   }
 }
