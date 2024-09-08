@@ -61,6 +61,7 @@ class _NowPlayingPageState extends State<NowPlayingPage>
   bool test = true;
   int selected = 2;
   late bool favor;
+  late int index;
 
   @override
   void initState() {
@@ -77,7 +78,15 @@ class _NowPlayingPageState extends State<NowPlayingPage>
         _nextSong();
       }
     });
-    favor = boxSongs.get(_song.id).favor;
+    index = 0;
+    for (var s in boxSongs.values) {
+      if (_song.id != s.id) {
+        index += 1;
+      } else {
+        break;
+      }
+    }
+    favor = boxSongs.getAt(index).favor;
   }
 
   @override
@@ -163,7 +172,7 @@ class _NowPlayingPageState extends State<NowPlayingPage>
                                         .showSnackBar(snackBar);
                                   }
                                 },
-                                icon: boxSongs.get(_song.id).favor
+                                icon: boxSongs.getAt(index).favor
                                     ? Icon(Icons.favorite)
                                     : Icon(Icons.favorite_border),
                                 color: Theme.of(context).colorScheme.primary,
@@ -453,28 +462,19 @@ class _NowPlayingPageState extends State<NowPlayingPage>
 
   void isFavorSong() async {
     favor = !favor;
-    var index = 0;
-    for (var s in boxSongs.keys) {
-      if (_song.id != s) {
-        index += 1;
-      } else {
-        break;
-      }
-    }
     if (favor) {
-      await boxFavorSong.put(
-          _song.id,
-          FavorSong(
-              id: _song.id,
-              title: _song.title,
-              album: _song.album,
-              artist: _song.artist,
-              source: _song.source,
-              image: _song.image,
-              duration: _song.duration,
-              favor: favor));
+      await boxFavorSong.add(FavorSong(
+          id: _song.id,
+          title: _song.title,
+          album: _song.album,
+          artist: _song.artist,
+          source: _song.source,
+          image: _song.image,
+          duration: _song.duration,
+          favor: favor));
+
       await boxSongs.putAt(
-          index,
+          getIndex(boxSongs),
           Songs(
               id: _song.id,
               title: _song.title,
@@ -486,7 +486,7 @@ class _NowPlayingPageState extends State<NowPlayingPage>
               favor: favor));
     } else {
       await boxSongs.putAt(
-          index,
+          getIndex(boxSongs),
           Songs(
               id: _song.id,
               title: _song.title,
@@ -496,9 +496,20 @@ class _NowPlayingPageState extends State<NowPlayingPage>
               image: _song.image,
               duration: _song.duration,
               favor: favor));
-      await boxFavorSong.delete(_song.id);
-
+      boxFavorSong.deleteAt(getIndex(boxFavorSong));
     }
+  }
+  
+  int getIndex(Box box){
+    var index = 0;
+    for (var s in box.values) {
+      if (_song.id != s.id) {
+        index += 1;
+      } else {
+        break;
+      }
+    }
+    return index;
   }
 }
 
