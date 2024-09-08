@@ -27,14 +27,10 @@ class FavorTabPage extends StatefulWidget {
 }
 
 class _FavorTabPageState extends State<FavorTabPage> {
-  late List<FavorSong> songs = [];
   List<AudioPlayerManager> audioPlayerManagers = [];
 
   @override
   void initState() {
-    for (var s in boxFavorSong.values) {
-      songs.add(s);
-    }
     super.initState();
   }
 
@@ -44,7 +40,9 @@ class _FavorTabPageState extends State<FavorTabPage> {
   }
 
   Widget getRow(int index) {
-    return _SongItemSection(parent: this, song: boxFavorSong.getAt(index));
+    List rev = boxFavorSong.values.toList();
+    rev = rev.reversed.toList();
+    return _SongItemSection(parent: this, song: rev[index]);
   }
 
   void navigate(FavorSong song) {
@@ -70,6 +68,8 @@ class _FavorTabPageState extends State<FavorTabPage> {
             duration: song.duration,
             favor: song.favor));
       }
+      songs2 = songs2.reversed.toList();
+      print(songs2.toString());
       return NowPlaying(
         songs: songs2,
         playingSong: song2,
@@ -141,7 +141,7 @@ class _FavorTabPageState extends State<FavorTabPage> {
             endIndent: 10,
           );
         },
-        itemCount: songs.length,
+        itemCount: 1,
         shrinkWrap: true,
       );
     }

@@ -37,6 +37,10 @@ class Songs {
   @HiveField(7)
   bool favor;
 
-
+@override
+  String toString() {
+    // TODO: implement toString
+    return title;
+  }
 
 }

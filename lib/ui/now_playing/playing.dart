@@ -63,6 +63,30 @@ class _NowPlayingPageState extends State<NowPlayingPage>
   late bool favor;
   late int index;
 
+  int getIndex(Box box, Songs song){
+    var index = 0;
+    for (var s in box.values) {
+      if (song.id != s.id) {
+        index += 1;
+      } else {
+        break;
+      }
+    }
+    return index;
+  }
+
+  int getIndexByList(List list, Songs song){
+    var index = 0;
+    for (var s in list) {
+      if (song.id != s.id) {
+        index += 1;
+      } else {
+        break;
+      }
+    }
+    return index;
+  }
+
   @override
   void initState() {
     // TODO: implement initState
@@ -71,22 +95,16 @@ class _NowPlayingPageState extends State<NowPlayingPage>
     _audioPlayerManager = AudioPlayerManager(songUrl: _song.source);
     _audioPlayerManager.init();
     // widget.audioPlayerManagers.add(_audioPlayerManager);
-    _selectedItemIndex = widget.songs.indexOf(widget.playingSong);
+
+    _selectedItemIndex = getIndexByList(widget.songs,_song);
+
+    print(_selectedItemIndex);
     _audioPlayerManager.player.playerStateStream.listen((playerState) {
       if (playerState.processingState == ProcessingState.completed &&
           !_isRepeat) {
         _nextSong();
       }
     });
-    index = 0;
-    for (var s in boxSongs.values) {
-      if (_song.id != s.id) {
-        index += 1;
-      } else {
-        break;
-      }
-    }
-    favor = boxSongs.getAt(index).favor;
   }
 
   @override
@@ -97,6 +115,7 @@ class _NowPlayingPageState extends State<NowPlayingPage>
 
   @override
   Widget build(BuildContext context) {
+    favor = boxSongs.getAt(getIndex(boxSongs, _song)).favor;
     return CupertinoPageScaffold(
         navigationBar: CupertinoNavigationBar(
           middle: const Text('Now Playing'),
@@ -172,7 +191,7 @@ class _NowPlayingPageState extends State<NowPlayingPage>
                                         .showSnackBar(snackBar);
                                   }
                                 },
-                                icon: boxSongs.getAt(index).favor
+                                icon: boxSongs.getAt(getIndex(boxSongs,_song)).favor
                                     ? Icon(Icons.favorite)
                                     : Icon(Icons.favorite_border),
                                 color: Theme.of(context).colorScheme.primary,
@@ -261,11 +280,11 @@ class _NowPlayingPageState extends State<NowPlayingPage>
       var random = Random();
       _selectedItemIndex = random.nextInt(widget.songs.length);
     } else {
-      if (_selectedItemIndex < widget.songs.length) {
+      if (_selectedItemIndex < widget.songs.length-1) {
         ++_selectedItemIndex;
       }
     }
-    if (_selectedItemIndex >= widget.songs.length) {
+    if (_selectedItemIndex > widget.songs.length) {
       _selectedItemIndex = _selectedItemIndex % widget.songs.length;
     }
     final nextSong = widget.songs[_selectedItemIndex];
@@ -474,7 +493,7 @@ class _NowPlayingPageState extends State<NowPlayingPage>
           favor: favor));
 
       await boxSongs.putAt(
-          getIndex(boxSongs),
+          getIndex(boxSongs,_song),
           Songs(
               id: _song.id,
               title: _song.title,
@@ -486,7 +505,7 @@ class _NowPlayingPageState extends State<NowPlayingPage>
               favor: favor));
     } else {
       await boxSongs.putAt(
-          getIndex(boxSongs),
+          getIndex(boxSongs,_song),
           Songs(
               id: _song.id,
               title: _song.title,
@@ -496,21 +515,12 @@ class _NowPlayingPageState extends State<NowPlayingPage>
               image: _song.image,
               duration: _song.duration,
               favor: favor));
-      boxFavorSong.deleteAt(getIndex(boxFavorSong));
+      boxFavorSong.deleteAt(getIndex(boxFavorSong,_song));
+      // boxFavorSong.deleteAll(boxFavorSong.keys);
     }
   }
-  
-  int getIndex(Box box){
-    var index = 0;
-    for (var s in box.values) {
-      if (_song.id != s.id) {
-        index += 1;
-      } else {
-        break;
-      }
-    }
-    return index;
-  }
+
+
 }
 
 class MediaButtonControl extends StatefulWidget {
