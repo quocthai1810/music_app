@@ -1,4 +1,3 @@
-
 import 'package:app_music/ui/favorite_songs/favorite_songs.dart';
 import 'package:app_music/ui/home/viewmodel.dart';
 import 'package:app_music/ui/now_playing/audio_player_manager.dart';
@@ -7,6 +6,7 @@ import 'package:app_music/ui/songs.dart';
 import 'package:app_music/ui/user/user.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 
 import '../../data/model/song.dart';
 import '../now_playing/playing.dart';
@@ -118,7 +118,7 @@ class _HomeTabPageState extends State<HomeTabPage> {
     if (showLoading) {
       return getProgressBar();
     } else {
-      return getListView();
+      return SlidableAutoCloseBehavior(closeWhenOpened: true,child: getListView(),);
     }
   }
 
@@ -133,7 +133,14 @@ class _HomeTabPageState extends State<HomeTabPage> {
   ListView getListView() {
     return ListView.separated(
       itemBuilder: (context, position) {
-        return getRow(position);
+        return Slidable(
+            endActionPane:
+                ActionPane(motion: const StretchMotion(),
+                    children: [
+                      SlidableAction(backgroundColor:Colors.grey,foregroundColor:Colors.purple,icon:Icons.more_horiz,onPressed: (context) {showBottomSheet();},autoClose: false,),
+                      SlidableAction(backgroundColor:Colors.purple,foregroundColor:Colors.white,icon:Icons.favorite,onPressed: (context) {},autoClose: false, ),
+                    ]),
+            child: getRow(position));
       },
       separatorBuilder: (context, index) {
         return const Divider(
@@ -227,15 +234,16 @@ class _SongItemSection extends StatelessWidget {
       ),
       title: Text(song.title),
       subtitle: Text(song.artist),
-      trailing: IconButton(
-        icon: const Icon(Icons.more_horiz),
-        onPressed: () {
-          parent.showBottomSheet();
-        },
-      ),
+      // trailing: IconButton(
+      //   icon: const Icon(Icons.more_horiz),
+      //   onPressed: () {
+      //     parent.showBottomSheet();
+      //   },
+      // ),
       onTap: () {
         parent.navigate(song);
       },
+      onLongPress: ()=>parent.showBottomSheet(),
     );
     throw UnimplementedError();
   }
