@@ -1,3 +1,4 @@
+import 'package:app_music/main.dart';
 import 'package:app_music/ui/favorite_songs/favorite_songs.dart';
 import 'package:app_music/ui/home/viewmodel.dart';
 import 'package:app_music/ui/now_playing/audio_player_manager.dart';
@@ -7,8 +8,11 @@ import 'package:app_music/ui/user/user.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:hive_flutter/adapters.dart';
 
+import '../../boxes.dart';
 import '../../data/model/song.dart';
+import '../../favor_song.dart';
 import '../now_playing/playing.dart';
 
 class MusicApp extends StatelessWidget {
@@ -88,6 +92,7 @@ class _HomeTabPageState extends State<HomeTabPage> {
   List<Songs> songs = [];
   late MusicAppViewModel _viewModel;
   List<AudioPlayerManager> audioPlayerManagers = [];
+  late bool favor;
 
   //hàm gán các dữ liệu trước khi tạo Widget
   @override
@@ -118,7 +123,14 @@ class _HomeTabPageState extends State<HomeTabPage> {
     if (showLoading) {
       return getProgressBar();
     } else {
-      return SlidableAutoCloseBehavior(closeWhenOpened: true,child: getListView(),);
+      return ValueListenableBuilder(
+          valueListenable: boxSongs.listenable(),
+          builder: (context, boxSongs, widget) {
+            return SlidableAutoCloseBehavior(
+              closeWhenOpened: true,
+              child: getListView(),
+            );
+          });
     }
   }
 
@@ -134,12 +146,26 @@ class _HomeTabPageState extends State<HomeTabPage> {
     return ListView.separated(
       itemBuilder: (context, position) {
         return Slidable(
-            endActionPane:
-                ActionPane(motion: const StretchMotion(),
-                    children: [
-                      SlidableAction(backgroundColor:Colors.grey,foregroundColor:Colors.purple,icon:Icons.more_horiz,onPressed: (context) {showBottomSheet();},autoClose: false,),
-                      SlidableAction(backgroundColor:Colors.purple,foregroundColor:Colors.white,icon:Icons.favorite,onPressed: (context) {},autoClose: false, ),
-                    ]),
+            endActionPane: ActionPane(motion: const StretchMotion(), children: [
+              SlidableAction(
+                backgroundColor: Colors.grey,
+                foregroundColor: Colors.purple,
+                icon: Icons.more_horiz,
+                onPressed: (context) {
+                  showBottomSheet();
+                },
+                autoClose: false,
+              ),
+              SlidableAction(
+                backgroundColor: Colors.purple,
+                foregroundColor: Colors.white,
+                icon: boxSongs.getAt(position).favor
+                    ? Icons.favorite
+                    : Icons.favorite_border,
+                onPressed: (context) {favor = boxSongs.getAt(position).favor;getFavor(position);},
+                autoClose: false,
+              ),
+            ]),
             child: getRow(position));
       },
       separatorBuilder: (context, index) {
@@ -205,6 +231,60 @@ class _HomeTabPageState extends State<HomeTabPage> {
       );
     }));
   }
+
+  void getFavor(int position) async {
+    favor = !favor;
+    print(favor);
+    if (favor) {
+      await boxFavorSong.add(FavorSong(
+          id: songs[position].id,
+          title: songs[position].title,
+          album: songs[position].album,
+          artist: songs[position].artist,
+          source: songs[position].source,
+          image: songs[position].image,
+          duration: songs[position].duration,
+          favor: favor));
+
+      await boxSongs.putAt(
+          position,
+          Songs(
+              id: songs[position].id,
+              title: songs[position].title,
+              album: songs[position].album,
+              artist: songs[position].artist,
+              source: songs[position].source,
+              image: songs[position].image,
+              duration: songs[position].duration,
+              favor: favor));
+    } else {
+      await boxSongs.putAt(
+          position,
+          Songs(
+              id: songs[position].id,
+              title: songs[position].title,
+              album: songs[position].album,
+              artist: songs[position].artist,
+              source: songs[position].source,
+              image: songs[position].image,
+              duration: songs[position].duration,
+              favor: favor));
+      boxFavorSong.deleteAt(getIndex(boxFavorSong, songs[position]));
+      // boxFavorSong.deleteAll(boxFavorSong.keys);
+    }
+  }
+
+  int getIndex(Box box, Songs song){
+    var index = 0;
+    for (var s in box.values) {
+      if (song.id != s.id) {
+        index += 1;
+      } else {
+        break;
+      }
+    }
+    return index;
+  }
 }
 
 //lớp hiển thị phần tử nhạc
@@ -243,7 +323,7 @@ class _SongItemSection extends StatelessWidget {
       onTap: () {
         parent.navigate(song);
       },
-      onLongPress: ()=>parent.showBottomSheet(),
+      onLongPress: () => parent.showBottomSheet(),
     );
     throw UnimplementedError();
   }

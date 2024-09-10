@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:http/http.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:marquee/marquee.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
 
 import '../songs.dart';
@@ -63,7 +64,7 @@ class _NowPlayingPageState extends State<NowPlayingPage>
   late bool favor;
   late int index;
 
-  int getIndex(Box box, Songs song){
+  int getIndex(Box box, Songs song) {
     var index = 0;
     for (var s in box.values) {
       if (song.id != s.id) {
@@ -75,7 +76,7 @@ class _NowPlayingPageState extends State<NowPlayingPage>
     return index;
   }
 
-  int getIndexByList(List list, Songs song){
+  int getIndexByList(List list, Songs song) {
     var index = 0;
     for (var s in list) {
       if (song.id != s.id) {
@@ -96,7 +97,7 @@ class _NowPlayingPageState extends State<NowPlayingPage>
     _audioPlayerManager.init();
     // widget.audioPlayerManagers.add(_audioPlayerManager);
 
-    _selectedItemIndex = getIndexByList(widget.songs,_song);
+    _selectedItemIndex = getIndexByList(widget.songs, _song);
 
     print(_selectedItemIndex);
     _audioPlayerManager.player.playerStateStream.listen((playerState) {
@@ -153,9 +154,11 @@ class _NowPlayingPageState extends State<NowPlayingPage>
                         popupMenu(),
                         Column(
                           children: [
-                            Text(_song.title,
-                                style: const TextStyle(
-                                    fontSize: 23, color: Colors.deepPurple)),
+                            Container(
+                              width: 200,
+                              height: 30,
+                              child: getTextMarquee(_song.title),
+                            ),
                             const SizedBox(
                               height: 16,
                             ),
@@ -191,7 +194,9 @@ class _NowPlayingPageState extends State<NowPlayingPage>
                                         .showSnackBar(snackBar);
                                   }
                                 },
-                                icon: boxSongs.getAt(getIndex(boxSongs,_song)).favor
+                                icon: boxSongs
+                                        .getAt(getIndex(boxSongs, _song))
+                                        .favor
                                     ? Icon(Icons.favorite)
                                     : Icon(Icons.favorite_border),
                                 color: Theme.of(context).colorScheme.primary,
@@ -280,7 +285,7 @@ class _NowPlayingPageState extends State<NowPlayingPage>
       var random = Random();
       _selectedItemIndex = random.nextInt(widget.songs.length);
     } else {
-      if (_selectedItemIndex < widget.songs.length-1) {
+      if (_selectedItemIndex < widget.songs.length - 1) {
         ++_selectedItemIndex;
       }
     }
@@ -493,7 +498,7 @@ class _NowPlayingPageState extends State<NowPlayingPage>
           favor: favor));
 
       await boxSongs.putAt(
-          getIndex(boxSongs,_song),
+          getIndex(boxSongs, _song),
           Songs(
               id: _song.id,
               title: _song.title,
@@ -505,7 +510,7 @@ class _NowPlayingPageState extends State<NowPlayingPage>
               favor: favor));
     } else {
       await boxSongs.putAt(
-          getIndex(boxSongs,_song),
+          getIndex(boxSongs, _song),
           Songs(
               id: _song.id,
               title: _song.title,
@@ -515,12 +520,41 @@ class _NowPlayingPageState extends State<NowPlayingPage>
               image: _song.image,
               duration: _song.duration,
               favor: favor));
-      boxFavorSong.deleteAt(getIndex(boxFavorSong,_song));
+      boxFavorSong.deleteAt(getIndex(boxFavorSong, _song));
       // boxFavorSong.deleteAll(boxFavorSong.keys);
     }
   }
 
+  getTextMarquee(String title) {
+    if(hasTextOverflow(title, const TextStyle(
+        fontSize: 23, color: Colors.deepPurple), 1)){
+      return Marquee(text: _song.title+'      ', style: const TextStyle(
+          fontSize: 23, color: Colors.deepPurple),);
+    }
+    else{
+      return Center(
+        child: Text(_song.title, style: const TextStyle(
+            fontSize: 23, color: Colors.deepPurple),),
+      );
+    }
+  }
 
+  bool hasTextOverflow(
+      String text,
+      TextStyle style,
+      double textScaleFactor,
+      {double minWidth = 0,
+        double maxWidth = double.infinity,
+        int maxLines = 1
+      }) {
+    final TextPainter textPainter = TextPainter(
+      text: TextSpan(text: text, style: style),
+      maxLines: maxLines,
+      textDirection: TextDirection.ltr,
+      textScaleFactor: textScaleFactor,
+    )..layout(minWidth: minWidth, maxWidth: 200);
+    return textPainter.didExceedMaxLines;
+  }
 }
 
 class MediaButtonControl extends StatefulWidget {
