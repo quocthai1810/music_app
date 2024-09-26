@@ -150,9 +150,9 @@ class _HomeTabPageState extends State<HomeTabPage> {
               SlidableAction(
                 backgroundColor: Colors.grey,
                 foregroundColor: Colors.purple,
-                icon: Icons.more_horiz,
+                icon: Icons.info,
                 onPressed: (context) {
-                  showBottomSheet();
+                  showBottomSheet(position);
                 },
                 autoClose: false,
               ),
@@ -195,24 +195,27 @@ class _HomeTabPageState extends State<HomeTabPage> {
   }
 
   //hàm hiện option cho từng bài
-  void showBottomSheet() {
+  void showBottomSheet(int position) {
     showModalBottomSheet(
         context: context,
         builder: (context) {
           return ClipRRect(
             borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
             child: Container(
-              height: 400,
+              height: 200,
               color: Colors.grey,
               child: Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
-                    const Text('Modal Bottom Sheet'),
+                    Text('Song name: ${songs[position].title}'),
+                    Text('Album: ${songs[position].album}'),
+                    Text('Singer: ${songs[position].artist}'),
+                    SizedBox(height: 20,),
                     ElevatedButton(
                         onPressed: () => Navigator.pop(context),
-                        child: const Text('Close Bottom Sheet'))
+                        child: const Text('Close information'))
                   ],
                 ),
               ),
@@ -323,7 +326,6 @@ class _SongItemSection extends StatelessWidget {
       onTap: () {
         parent.navigate(song);
       },
-      onLongPress: () => parent.showBottomSheet(),
     );
     throw UnimplementedError();
   }

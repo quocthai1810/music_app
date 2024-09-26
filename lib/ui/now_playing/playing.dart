@@ -552,7 +552,7 @@ class _NowPlayingPageState extends State<NowPlayingPage>
       maxLines: maxLines,
       textDirection: TextDirection.ltr,
       textScaleFactor: textScaleFactor,
-    )..layout(minWidth: minWidth, maxWidth: 200);
+    )..layout(minWidth: minWidth, maxWidth: 190);
     return textPainter.didExceedMaxLines;
   }
 }
