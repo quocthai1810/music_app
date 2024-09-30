@@ -37,7 +37,13 @@ class _FavorTabPageState extends State<FavorTabPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(body: getUI());
+    return Scaffold(
+      body: getUI(),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => delAll(),
+        child: const Icon(Icons.delete_forever),
+      ),
+    );
   }
 
   Widget getRow(int index) {
@@ -99,7 +105,7 @@ class _FavorTabPageState extends State<FavorTabPage> {
           return ClipRRect(
             borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
             child: Container(
-              height: 400,
+              height: 200,
               color: Colors.grey,
               child: Center(
                 child: Column(
@@ -109,10 +115,12 @@ class _FavorTabPageState extends State<FavorTabPage> {
                     Text('Song name: ${songs[position].title}'),
                     Text('Album: ${songs[position].album}'),
                     Text('Singer: ${songs[position].artist}'),
-                    SizedBox(height: 20,),
+                    SizedBox(
+                      height: 20,
+                    ),
                     ElevatedButton(
                         onPressed: () => Navigator.pop(context),
-                        child: const Text('Close Bottom Sheet'))
+                        child: const Text('Close information'))
                   ],
                 ),
               ),
@@ -127,8 +135,9 @@ class _FavorTabPageState extends State<FavorTabPage> {
         builder: (context, boxFavorSong, widget) {
           return boxFavorSong.isEmpty
               ? const Center(child: Text('Danh mục Favorite trống !'))
-              : SlidableAutoCloseBehavior(closeWhenOpened: true,
-                child: ListView.separated(
+              : SlidableAutoCloseBehavior(
+                  closeWhenOpened: true,
+                  child: ListView.separated(
                     itemBuilder: (context, position) {
                       return Slidable(
                           endActionPane:
@@ -167,7 +176,7 @@ class _FavorTabPageState extends State<FavorTabPage> {
                     itemCount: boxFavorSong.length,
                     shrinkWrap: true,
                   ),
-              );
+                );
         });
 
     if (boxFavorSong.isEmpty) {
@@ -209,14 +218,17 @@ class _FavorTabPageState extends State<FavorTabPage> {
     }
     revSongs = revSongs.reversed.toList();
     // print(revSongs[position].title);
-    boxSongs.putAt(getIndex(boxSongs, revSongs[position]), Songs(id: revSongs[position].id,
-        title: revSongs[position].title,
-        album: revSongs[position].album,
-        artist: revSongs[position].artist,
-        source: revSongs[position].source,
-        image: revSongs[position].image,
-        duration: revSongs[position].duration,
-        favor: favor));
+    boxSongs.putAt(
+        getIndex(boxSongs, revSongs[position]),
+        Songs(
+            id: revSongs[position].id,
+            title: revSongs[position].title,
+            album: revSongs[position].album,
+            artist: revSongs[position].artist,
+            source: revSongs[position].source,
+            image: revSongs[position].image,
+            duration: revSongs[position].duration,
+            favor: favor));
     // print(boxFavorSong.getAt(getIndex(boxFavorSong, revSongs[position])).title);
     boxFavorSong.deleteAt(getIndex(boxFavorSong, revSongs[position]));
     // boxSongs.putAt(index, Songs(id: id, title: title, album: album, artist: artist, source: source, image: image, duration: duration, favor: favor))
@@ -232,6 +244,59 @@ class _FavorTabPageState extends State<FavorTabPage> {
       }
     }
     return index;
+  }
+
+  delAll() {
+    showDialog(
+        context: context,
+        builder: (context) {
+          if (boxFavorSong.isEmpty) {
+            return AlertDialog(
+              title: const Text('Bạn không có bài hát yêu thích nào !'),
+              actions: [
+                TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('OK'))
+              ],
+            );
+          }
+          return AlertDialog(
+            title: const Text('Bạn có muốn xóa hết bài hát yêu thích ?'),
+            actions: [
+              TextButton(
+                  onPressed: () => Navigator.pop(context, 'Cancel'),
+                  child: const Text('Cancel')),
+              TextButton(
+                  onPressed: () {
+                    for (var song in boxFavorSong.values) {
+                      song = Songs(
+                          id: song.id,
+                          title: song.title,
+                          album: song.album,
+                          artist: song.artist,
+                          source: song.source,
+                          image: song.image,
+                          duration: song.duration,
+                          favor: song.favor);
+                      boxSongs.putAt(
+                          getIndex(boxSongs, song),
+                          Songs(
+                              id: song.id,
+                              title: song.title,
+                              album: song.album,
+                              artist: song.artist,
+                              source: song.source,
+                              image: song.image,
+                              duration: song.duration,
+                              favor: !song.favor));
+                    }
+                    boxFavorSong.deleteAll(boxFavorSong.keys);
+                    Navigator.pop(context, 'OK');
+                  },
+                  child: const Text('OK')),
+            ],
+          );
+        });
   }
 }
 

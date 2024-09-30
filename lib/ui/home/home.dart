@@ -4,7 +4,6 @@ import 'package:app_music/ui/home/viewmodel.dart';
 import 'package:app_music/ui/now_playing/audio_player_manager.dart';
 import 'package:app_music/ui/settings/settings.dart';
 import 'package:app_music/ui/songs.dart';
-import 'package:app_music/ui/user/user.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
@@ -43,8 +42,7 @@ class _MusicHomePageState extends State<MusicHomePage> {
   final List<Widget> _tabs = [
     const HomeTab(),
     const FavorTab(),
-    const AccountTab(),
-    const SettingsTab()
+    const SettingsTab(),
   ];
 
   @override
@@ -60,8 +58,6 @@ class _MusicHomePageState extends State<MusicHomePage> {
                 BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
                 BottomNavigationBarItem(
                     icon: Icon(Icons.favorite), label: 'Favorite'),
-                BottomNavigationBarItem(
-                    icon: Icon(Icons.person), label: 'Account'),
                 BottomNavigationBarItem(
                     icon: Icon(Icons.settings), label: 'Settings'),
               ]),
