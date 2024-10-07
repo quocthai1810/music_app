@@ -1,3 +1,4 @@
+import 'package:app_music/Provider/provider.dart';
 import 'package:app_music/main.dart';
 import 'package:app_music/ui/favorite_songs/favorite_songs.dart';
 import 'package:app_music/ui/home/viewmodel.dart';
@@ -8,6 +9,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:hive_flutter/adapters.dart';
+import 'package:provider/provider.dart';
 
 import '../../boxes.dart';
 import '../../data/model/song.dart';
@@ -19,14 +21,23 @@ class MusicApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Music App',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.purple),
-        useMaterial3: true,
+    return ChangeNotifierProvider(
+      create: (BuildContext context)=>UiProvider()..init(),
+      child: Consumer<UiProvider>(
+        builder: (context, UiProvider notifier, child) {
+          return MaterialApp(
+            title: 'Music App',
+            themeMode: notifier.isDark? ThemeMode.dark : ThemeMode.light,
+            darkTheme: notifier.isDark? notifier.darkTheme : notifier.lightTheme,
+            theme: ThemeData(
+              colorScheme: ColorScheme.fromSeed(seedColor: Colors.purple),
+              useMaterial3: true,
+            ),
+            home: MusicHomePage(),
+            debugShowCheckedModeBanner: false,
+          );
+        }
       ),
-      home: MusicHomePage(),
-      debugShowCheckedModeBanner: false,
     );
   }
 }
@@ -54,7 +65,7 @@ class _MusicHomePageState extends State<MusicHomePage> {
         child: CupertinoTabScaffold(
           tabBar: CupertinoTabBar(
               backgroundColor: Theme.of(context).colorScheme.onInverseSurface,
-              items: [
+              items: const [
                 BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
                 BottomNavigationBarItem(
                     icon: Icon(Icons.favorite), label: 'Favorite'),
@@ -89,14 +100,31 @@ class _HomeTabPageState extends State<HomeTabPage> {
   late MusicAppViewModel _viewModel;
   List<AudioPlayerManager> audioPlayerManagers = [];
   late bool favor;
+  List<Songs> _foundSongs = [];
 
   //hàm gán các dữ liệu trước khi tạo Widget
   @override
   void initState() {
+    _foundSongs = songs;
     _viewModel = MusicAppViewModel();
     _viewModel.loadSongs();
     observeData();
     super.initState();
+  }
+
+  void _runFilter(String enteredKeyword){
+    List<Songs> results = [];
+    if (enteredKeyword.isEmpty){
+      results = songs;
+    }
+    else{
+      results = songs.where((song)=>
+      song.title.toLowerCase().contains(enteredKeyword.toLowerCase())).toList();
+    }
+
+    setState(() {
+      _foundSongs = results;
+    });
   }
 
   @override
@@ -119,14 +147,31 @@ class _HomeTabPageState extends State<HomeTabPage> {
     if (showLoading) {
       return getProgressBar();
     } else {
-      return ValueListenableBuilder(
-          valueListenable: boxSongs.listenable(),
-          builder: (context, boxSongs, widget) {
-            return SlidableAutoCloseBehavior(
-              closeWhenOpened: true,
-              child: getListView(),
-            );
-          });
+      return Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 90),
+            child: TextField(
+              onChanged: (value)=>_runFilter(value),
+              onTapOutside: (event){
+                FocusManager.instance.primaryFocus?.unfocus();
+              },
+              decoration: const InputDecoration(
+                labelText: 'Search', suffixIcon: Icon(Icons.search)),
+              ),
+          ),
+          Expanded(
+            child: ValueListenableBuilder(
+                valueListenable: boxSongs.listenable(),
+                builder: (context, boxSongs, widget) {
+                  return SlidableAutoCloseBehavior(
+                    closeWhenOpened: true,
+                    child: getListView(),
+                  );
+                }),
+          ),
+        ],
+      );
     }
   }
 
@@ -172,13 +217,13 @@ class _HomeTabPageState extends State<HomeTabPage> {
           endIndent: 10,
         );
       },
-      itemCount: songs.length,
+      itemCount: _foundSongs.length,
       shrinkWrap: true,
     );
   }
 
   Widget getRow(int index) {
-    return _SongItemSection(parent: this, song: songs[index]);
+    return _SongItemSection(parent: this, song: _foundSongs[index]);
   }
 
   //hàm theo dõi nếu dữ liệu co thay đổi thì cập nhật lại
@@ -205,9 +250,9 @@ class _HomeTabPageState extends State<HomeTabPage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
-                    Text('Song name: ${songs[position].title}'),
-                    Text('Album: ${songs[position].album}'),
-                    Text('Singer: ${songs[position].artist}'),
+                    Text('Song name: ${_foundSongs[position].title}'),
+                    Text('Album: ${_foundSongs[position].album}'),
+                    Text('Singer: ${_foundSongs[position].artist}'),
                     SizedBox(height: 20,),
                     ElevatedButton(
                         onPressed: () => Navigator.pop(context),
