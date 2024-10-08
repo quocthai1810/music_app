@@ -4,6 +4,8 @@ import 'package:app_music/boxes.dart';
 import 'package:app_music/data/model/song.dart';
 import 'package:app_music/favor_song.dart';
 import 'package:app_music/main.dart';
+import 'package:app_music/ui/home/home.dart';
+import 'package:app_music/ui/home/playingsongprovider.dart';
 import 'package:audio_video_progress_bar/audio_video_progress_bar.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -12,6 +14,7 @@ import 'package:http/http.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:marquee/marquee.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
+import 'package:provider/provider.dart';
 
 import '../songs.dart';
 import 'audio_player_manager.dart';
@@ -93,24 +96,29 @@ class _NowPlayingPageState extends State<NowPlayingPage>
     // TODO: implement initState
     super.initState();
     _song = widget.playingSong;
-    _audioPlayerManager = AudioPlayerManager(songUrl: _song.source);
-    _audioPlayerManager.init();
+    _audioPlayerManager = AudioPlayerManager();
+    if (_audioPlayerManager.songUrl.compareTo(_song.source) != 0){
+      _audioPlayerManager.updateSongUrl(_song.source);
+      _audioPlayerManager.prepare(isNewSong: true);
+    } else {
+      _audioPlayerManager.prepare(isNewSong: false);
+    }
     // widget.audioPlayerManagers.add(_audioPlayerManager);
 
     _selectedItemIndex = getIndexByList(widget.songs, _song);
 
     print(_selectedItemIndex);
-    _audioPlayerManager.player.playerStateStream.listen((playerState) {
-      if (playerState.processingState == ProcessingState.completed &&
-          !_isRepeat) {
-        _nextSong();
-      }
-    });
+    // _audioPlayerManager.player.playerStateStream.listen((playerState) {
+    //   if (playerState.processingState == ProcessingState.completed &&
+    //       !_isRepeat) {
+    //     _nextSong();
+    //   }
+    // });
   }
 
   @override
   void dispose() {
-    _audioPlayerManager.dispose();
+    // _audioPlayerManager.dispose();
     super.dispose();
   }
 
@@ -294,9 +302,12 @@ class _NowPlayingPageState extends State<NowPlayingPage>
     }
     final nextSong = widget.songs[_selectedItemIndex];
     _audioPlayerManager.updateSongUrl(nextSong.source);
+    _audioPlayerManager.prepare(isNewSong: true);
     setState(() {
       _song = nextSong;
     });
+    print('bài hát $_song');
+    context.read<PlayingSongProvider>().updatePlayingSong(_song);
   }
 
   void _previousSong() {
@@ -313,9 +324,11 @@ class _NowPlayingPageState extends State<NowPlayingPage>
     }
     final nextSong = widget.songs[_selectedItemIndex];
     _audioPlayerManager.updateSongUrl(nextSong.source);
+    _audioPlayerManager.prepare(isNewSong: true);
     setState(() {
       _song = nextSong;
     });
+    context.read<PlayingSongProvider>().updatePlayingSong(_song);
   }
 
   StreamBuilder<DurationState> _progressBar() {
@@ -352,15 +365,15 @@ class _NowPlayingPageState extends State<NowPlayingPage>
             );
           } else if (playing != true &&
               processingState == ProcessingState.ready) {
-            if (isPlay == false) {
+            // if (isPlay == false) {
               //     // if (widget.audioPlayerManagers.length > 1) {
               //     //   var prevSong = widget.audioPlayerManagers.removeAt(0);
               //     //   prevSong.dispose();
               //     // }
               //
-              _audioPlayerManager.player.play();
-              isPlay = true;
-            }
+              // _audioPlayerManager.player.play();
+              // isPlay = true;
+            // }
             return MediaButtonControl(
                 function: () {
                   _audioPlayerManager.player.play();
@@ -401,7 +414,10 @@ class _NowPlayingPageState extends State<NowPlayingPage>
           var total = _audioPlayerManager.player.duration?.inSeconds.toDouble();
           total ??= 0.000000000000000001;
           positionPercent ??= 0.0;
-          final position = positionPercent / total;
+          var position = positionPercent / total;
+          if(position>1){
+            position = 1;
+          }
           return CircularPercentIndicator(
               radius: radius + 10,
               animation: true,

@@ -1,6 +1,7 @@
 import 'package:app_music/Provider/provider.dart';
 import 'package:app_music/main.dart';
 import 'package:app_music/ui/favorite_songs/favorite_songs.dart';
+import 'package:app_music/ui/home/playingsongprovider.dart';
 import 'package:app_music/ui/home/viewmodel.dart';
 import 'package:app_music/ui/now_playing/audio_player_manager.dart';
 import 'package:app_music/ui/settings/settings.dart';
@@ -21,22 +22,33 @@ class MusicApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (BuildContext context)=>UiProvider()..init(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (context) =>
+          UiProvider()
+            ..init(),
+        ),
+        ChangeNotifierProvider(
+          create: (context) =>
+              PlayingSongProvider(), // Thêm provider quản lý playingSong
+        ),
+      ],
       child: Consumer<UiProvider>(
         builder: (context, UiProvider notifier, child) {
           return MaterialApp(
             title: 'Music App',
-            themeMode: notifier.isDark? ThemeMode.dark : ThemeMode.light,
-            darkTheme: notifier.isDark? notifier.darkTheme : notifier.lightTheme,
+            themeMode: notifier.isDark ? ThemeMode.dark : ThemeMode.light,
+            darkTheme:
+            notifier.isDark ? notifier.darkTheme : notifier.lightTheme,
             theme: ThemeData(
               colorScheme: ColorScheme.fromSeed(seedColor: Colors.purple),
               useMaterial3: true,
             ),
-            home: MusicHomePage(),
+            home: const MusicHomePage(),
             debugShowCheckedModeBanner: false,
           );
-        }
+        },
       ),
     );
   }
@@ -64,7 +76,10 @@ class _MusicHomePageState extends State<MusicHomePage> {
         ),
         child: CupertinoTabScaffold(
           tabBar: CupertinoTabBar(
-              backgroundColor: Theme.of(context).colorScheme.onInverseSurface,
+              backgroundColor: Theme
+                  .of(context)
+                  .colorScheme
+                  .onInverseSurface,
               items: const [
                 BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
                 BottomNavigationBarItem(
@@ -96,15 +111,33 @@ class HomeTabPage extends StatefulWidget {
 }
 
 class _HomeTabPageState extends State<HomeTabPage> {
+  late AudioPlayerManager _audioPlayerManager;
+  final ScrollController _scrollController = ScrollController();
+  bool _showScrollToTopButton = false;
   List<Songs> songs = [];
   late MusicAppViewModel _viewModel;
   List<AudioPlayerManager> audioPlayerManagers = [];
   late bool favor;
   List<Songs> _foundSongs = [];
+  bool isTap = false;
+  late Songs nowSong;
+  bool isPlay = false;
 
   //hàm gán các dữ liệu trước khi tạo Widget
   @override
   void initState() {
+    _scrollController.addListener(() {
+      // Hiện nút khi cuộn xuống
+      if (_scrollController.offset >= 200) {
+        setState(() {
+          _showScrollToTopButton = true;
+        });
+      } else {
+        setState(() {
+          _showScrollToTopButton = false;
+        });
+      }
+    });
     _foundSongs = songs;
     _viewModel = MusicAppViewModel();
     _viewModel.loadSongs();
@@ -112,14 +145,23 @@ class _HomeTabPageState extends State<HomeTabPage> {
     super.initState();
   }
 
-  void _runFilter(String enteredKeyword){
+  void _scrollToTop() {
+    _scrollController.animateTo(
+      0,
+      duration: Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  void _runFilter(String enteredKeyword) {
     List<Songs> results = [];
-    if (enteredKeyword.isEmpty){
+    if (enteredKeyword.isEmpty) {
       results = songs;
-    }
-    else{
-      results = songs.where((song)=>
-      song.title.toLowerCase().contains(enteredKeyword.toLowerCase())).toList();
+    } else {
+      results = songs
+          .where((song) =>
+          song.title.toLowerCase().contains(enteredKeyword.toLowerCase()))
+          .toList();
     }
 
     setState(() {
@@ -138,6 +180,7 @@ class _HomeTabPageState extends State<HomeTabPage> {
   @override
   void dispose() {
     _viewModel.songStream.close();
+    AudioPlayerManager().dispose();
     super.dispose();
   }
 
@@ -147,30 +190,155 @@ class _HomeTabPageState extends State<HomeTabPage> {
     if (showLoading) {
       return getProgressBar();
     } else {
-      return Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(top: 90),
-            child: TextField(
-              onChanged: (value)=>_runFilter(value),
-              onTapOutside: (event){
-                FocusManager.instance.primaryFocus?.unfocus();
-              },
-              decoration: const InputDecoration(
-                labelText: 'Search', suffixIcon: Icon(Icons.search)),
-              ),
-          ),
-          Expanded(
-            child: ValueListenableBuilder(
-                valueListenable: boxSongs.listenable(),
-                builder: (context, boxSongs, widget) {
-                  return SlidableAutoCloseBehavior(
-                    closeWhenOpened: true,
-                    child: getListView(),
-                  );
-                }),
-          ),
-        ],
+      return Consumer<PlayingSongProvider>(
+        builder: (BuildContext context, playingSongProvider, child) {
+          Songs? playingSong = playingSongProvider.playingSong;
+          return Stack(alignment: Alignment.bottomCenter, children: [
+            Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(top: 90),
+                  child: TextField(
+                    onChanged: (value) => _runFilter(value),
+                    onTapOutside: (event) {
+                      FocusManager.instance.primaryFocus?.unfocus();
+                    },
+                    decoration: const InputDecoration(
+                        labelText: 'Search', suffixIcon: Icon(Icons.search)),
+                  ),
+                ),
+                Expanded(
+                  child: ValueListenableBuilder(
+                      valueListenable: boxSongs.listenable(),
+                      builder: (context, boxSongs, widget) {
+                        return SlidableAutoCloseBehavior(
+                          closeWhenOpened: true,
+                          child: getListView(),
+                        );
+                      }),
+                ),
+              ],
+            ),
+            if (_showScrollToTopButton)
+              Positioned(
+                  top: MediaQuery
+                      .of(context)
+                      .size
+                      .height * 0.17,
+                  right: 16,
+                  child: FloatingActionButton(
+                    onPressed: _scrollToTop,
+                    child: Icon(Icons.arrow_upward),
+                  )),
+            playingSong != null
+                ? Container(
+                margin: const EdgeInsets.symmetric(
+                    horizontal: 15, vertical: 50),
+                height: 75,
+                decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment(0, 5),
+                        colors: [
+                          Colors.purple,
+                          Colors.deepPurple,
+                        ]),
+                    borderRadius: BorderRadius.circular(20)),
+                child: ListTile(
+                  leading: ClipRRect(
+                    borderRadius: BorderRadius.circular(30),
+                    child: FadeInImage.assetNetwork(
+                      placeholder: 'assets/itune.jpg',
+                      image: playingSong.image,
+                      width: 48,
+                      height: 48,
+                      imageErrorBuilder: (context, error, stackTrace) {
+                        return Image.asset('assets/itune.jpg',
+                            width: 48, height: 48);
+                      },
+                    ),
+                  ),
+                  title: Text(playingSong.title),
+                  subtitle: Text(playingSong.artist),
+                  trailing: IconButton(onPressed: (){
+                    setState(() {
+                      isPlay = _audioPlayerManager.player.playing;
+                    });
+                    if (_audioPlayerManager.player.playing==true){
+                      _audioPlayerManager.player.pause();
+                    }
+                    else{
+                      _audioPlayerManager.player.play();
+                    }
+                  },
+                      icon: isPlay ? const Icon(
+                          Icons.play_arrow):const Icon(Icons.pause)),
+                  // trailing: IconButton(
+                  //   icon: const Icon(Icons.more_horiz),
+                  //   onPressed: () {
+                  //     parent.showBottomSheet();
+                  //   },
+                  // ),
+                  onTap: () {
+                    navigate(playingSong);
+                  },
+                ))
+                : isTap == false
+                ? const SizedBox.shrink()
+                : Container(
+                margin: const EdgeInsets.symmetric(
+                    horizontal: 15, vertical: 50),
+                height: 75,
+                decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment(0, 5),
+                        colors: [
+                          Colors.purple,
+                          Colors.deepPurple,
+                        ]),
+                    borderRadius: BorderRadius.circular(20)),
+                child: ListTile(
+                  leading: ClipRRect(
+                    borderRadius: BorderRadius.circular(30),
+                    child: FadeInImage.assetNetwork(
+                      placeholder: 'assets/itune.jpg',
+                      image: nowSong.image,
+                      width: 48,
+                      height: 48,
+                      imageErrorBuilder: (context, error, stackTrace) {
+                        return Image.asset('assets/itune.jpg',
+                            width: 48, height: 48);
+                      },
+                    ),
+                  ),
+                  title: Text(nowSong.title),
+                  subtitle: Text(nowSong.artist),
+                  trailing: IconButton(onPressed: (){
+                    setState(() {
+                      isPlay = _audioPlayerManager.player.playing;
+                    });
+                    if (_audioPlayerManager.player.playing==true){
+                      _audioPlayerManager.player.pause();
+                    }
+                    else{
+                      _audioPlayerManager.player.play();
+                    }
+                  },
+                      icon: isPlay ? const Icon(
+                          Icons.play_arrow):const Icon(Icons.pause)),
+                  // trailing: IconButton(
+                  //   icon: const Icon(Icons.more_horiz),
+                  //   onPressed: () {
+                  //     parent.showBottomSheet();
+                  //   },
+                  // ),
+                  onTap: () {
+                    navigate(nowSong);
+                  },
+                ))
+          ]);
+        },
       );
     }
   }
@@ -185,6 +353,7 @@ class _HomeTabPageState extends State<HomeTabPage> {
   //hàm hiển thị danh sách bài hát
   ListView getListView() {
     return ListView.separated(
+      controller: _scrollController,
       itemBuilder: (context, position) {
         return Slidable(
             endActionPane: ActionPane(motion: const StretchMotion(), children: [
@@ -200,10 +369,17 @@ class _HomeTabPageState extends State<HomeTabPage> {
               SlidableAction(
                 backgroundColor: Colors.purple,
                 foregroundColor: Colors.white,
-                icon: boxSongs.getAt(position).favor
+                icon: boxSongs
+                    .getAt(position)
+                    .favor
                     ? Icons.favorite
                     : Icons.favorite_border,
-                onPressed: (context) {favor = boxSongs.getAt(position).favor;getFavor(position);},
+                onPressed: (context) {
+                  favor = boxSongs
+                      .getAt(position)
+                      .favor;
+                  getFavor(position);
+                },
                 autoClose: false,
               ),
             ]),
@@ -253,7 +429,9 @@ class _HomeTabPageState extends State<HomeTabPage> {
                     Text('Song name: ${_foundSongs[position].title}'),
                     Text('Album: ${_foundSongs[position].album}'),
                     Text('Singer: ${_foundSongs[position].artist}'),
-                    SizedBox(height: 20,),
+                    SizedBox(
+                      height: 20,
+                    ),
                     ElevatedButton(
                         onPressed: () => Navigator.pop(context),
                         child: const Text('Close information'))
@@ -266,14 +444,20 @@ class _HomeTabPageState extends State<HomeTabPage> {
   }
 
   //hàm điều hướng từng bài để qua trang nghe nhạc
-  void navigate(Songs song) {
-    Navigator.push(context, CupertinoPageRoute(builder: (context) {
+  void navigate(Songs song) async {
+    await Navigator.push(context, CupertinoPageRoute(builder: (context) {
       return NowPlaying(
         songs: songs,
         playingSong: song,
         audioPlayerManagers: audioPlayerManagers,
       );
     }));
+
+    _audioPlayerManager = AudioPlayerManager();
+    isTap = true;
+    setState(() {
+      nowSong = song;
+    });
   }
 
   void getFavor(int position) async {
@@ -318,7 +502,7 @@ class _HomeTabPageState extends State<HomeTabPage> {
     }
   }
 
-  int getIndex(Box box, Songs song){
+  int getIndex(Box box, Songs song) {
     var index = 0;
     for (var s in box.values) {
       if (song.id != s.id) {

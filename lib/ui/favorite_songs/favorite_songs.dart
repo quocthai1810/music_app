@@ -6,7 +6,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:provider/provider.dart';
 
+import '../home/playingsongprovider.dart';
 import '../now_playing/audio_player_manager.dart';
 import '../now_playing/playing.dart';
 import '../songs.dart';
@@ -29,6 +31,7 @@ class FavorTabPage extends StatefulWidget {
 
 class _FavorTabPageState extends State<FavorTabPage> {
   List<AudioPlayerManager> audioPlayerManagers = [];
+  late Songs nowSong;
 
   @override
   void initState() {
@@ -83,6 +86,8 @@ class _FavorTabPageState extends State<FavorTabPage> {
         audioPlayerManagers: audioPlayerManagers,
       );
     }));
+    nowSong = Songs(id: song.id, title: song.title, album: song.album, artist: song.artist, source: song.source, image: song.image, duration: song.duration, favor: song.favor);
+    context.read<PlayingSongProvider>().updatePlayingSong(nowSong);
   }
 
   void showBottomSheet(int position) {
